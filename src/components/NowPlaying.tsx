@@ -77,12 +77,13 @@ function formatDuration(ms: number): string {
 
 interface NowPlayingProps {
   onColorsChange?: (colors: string[]) => void;
+  accessOpen?: boolean | null;
 }
 
 // 類似アーティスト再生の状態
 type SimilarStatus = "idle" | "loading" | "success" | "error";
 
-export default function NowPlaying({ onColorsChange }: NowPlayingProps) {
+export default function NowPlaying({ onColorsChange, accessOpen }: NowPlayingProps) {
   const [data, setData] = useState<NowPlayingResponse | null>(null);
   const [loading, setLoading] = useState(true);
   // 現在選択中の音量プリセット値
@@ -92,9 +93,12 @@ export default function NowPlaying({ onColorsChange }: NowPlayingProps) {
   const [similarMessage, setSimilarMessage] = useState("");
   // WHAT'S THE VIBE? パネルの開閉状態
   const [isVibeOpen, setIsVibeOpen] = useState(false);
+  // シェアボタンのフィードバック状態
+  const [shared, setShared] = useState(false);
 
   // マウント時に現在の音量を取得して最も近いプリセットをハイライトする
   useEffect(() => {
+    if (accessOpen === false) return;
     fetch("/api/volume")
       .then((res) => res.json() as Promise<{ volume: number | null }>)
       .then(({ volume }) => {
@@ -105,7 +109,7 @@ export default function NowPlaying({ onColorsChange }: NowPlayingProps) {
         setActiveVolume(closest.value);
       })
       .catch(() => {});
-  }, []);
+  }, [accessOpen]);
 
   // 音量を設定する
   const setVolume = useCallback(async (volume: number) => {
@@ -148,6 +152,23 @@ export default function NowPlaying({ onColorsChange }: NowPlayingProps) {
     }
   }, []);
 
+  // 曲のSpotifyリンクをシェアまたはクリップボードにコピーする
+  const handleShare = useCallback(async () => {
+    if (!data?.track) return;
+    const url = `https://open.spotify.com/track/${data.track.id}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: data.track.name, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+      }
+      setShared(true);
+      setTimeout(() => setShared(false), 2000);
+    } catch {
+      // キャンセルや失敗は無視
+    }
+  }, [data?.track]);
+
   const fetchNowPlaying = useCallback(async () => {
     try {
       const res = await fetch("/api/now-playing");
@@ -163,11 +184,16 @@ export default function NowPlaying({ onColorsChange }: NowPlayingProps) {
   }, []);
 
   useEffect(() => {
+    // accessOpen === false の場合はSpotifyへのリクエストを送らない
+    if (accessOpen === false) {
+      setLoading(false);
+      return;
+    }
     fetchNowPlaying();
-    // 3秒ごとにポーリング
-    const interval = setInterval(fetchNowPlaying, 3000);
+    // 12秒ごとにポーリング
+    const interval = setInterval(fetchNowPlaying, 12000);
     return () => clearInterval(interval);
-  }, [fetchNowPlaying]);
+  }, [fetchNowPlaying, accessOpen]);
 
   // アートワーク変化時に背景色を抽出して親に通知
   const artwork = data?.track?.album.images[0]?.url;
@@ -205,23 +231,42 @@ export default function NowPlaying({ onColorsChange }: NowPlayingProps) {
   return (
     <div className="flex flex-col items-center gap-6">
       {/* アートワーク */}
-      <div className="relative w-64 h-64 rounded-2xl overflow-hidden shadow-2xl shadow-black/50">
-        {artwork ? (
-          <Image
-            src={artwork}
-            alt={track.album.name}
-            fill
-            className="object-cover"
-            sizes="256px"
-            priority
-          />
-        ) : (
-          <div className="w-full h-full bg-zinc-700 flex items-center justify-center">
-            <svg className="w-16 h-16 text-zinc-500" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 14a4 4 0 110-8 4 4 0 010 8zm0-6a2 2 0 100 4 2 2 0 000-4z" />
+      <div className="relative w-64 h-64">
+        <div className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl shadow-black/50">
+          {artwork ? (
+            <Image
+              src={artwork}
+              alt={track.album.name}
+              fill
+              className="object-cover"
+              sizes="256px"
+              priority
+            />
+          ) : (
+            <div className="w-full h-full bg-zinc-700 flex items-center justify-center">
+              <svg className="w-16 h-16 text-zinc-500" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 14a4 4 0 110-8 4 4 0 010 8zm0-6a2 2 0 100 4 2 2 0 000-4z" />
+              </svg>
+            </div>
+          )}
+        </div>
+        {/* シェアボタン */}
+        <button
+          onClick={handleShare}
+          className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-sm text-white/60 hover:text-white hover:bg-black/60 transition-all active:scale-90"
+        >
+          {shared ? (
+            // コピー完了チェックアイコン
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
-          </div>
-        )}
+          ) : (
+            // シェアアイコン
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" />
+            </svg>
+          )}
+        </button>
       </div>
 
       {/* 曲情報 */}

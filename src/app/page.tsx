@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import NowPlaying from "@/components/NowPlaying";
 import SearchBar from "@/components/SearchBar";
 import NextUp from "@/components/NextUp";
@@ -10,17 +11,29 @@ const DEFAULT_COLORS = ["#1a0a2e", "#0a1a2e", "#0a2010"];
 
 // ログイン不要のメインページ（アクセス制御はMiddlewareで実施）
 export default function HomePage() {
+  const router = useRouter();
   const [colors, setColors] = useState<string[]>(DEFAULT_COLORS);
   // アクセス開放状態（nullは未取得）
   const [accessOpen, setAccessOpen] = useState<boolean | null>(null);
 
-  // アクセス状態を取得する
+  // アクセス状態を30秒ごとにポーリングし、閉じた場合は /closed へリダイレクト
   useEffect(() => {
-    fetch("/api/access")
-      .then((res) => res.json() as Promise<{ open: boolean }>)
-      .then((data) => setAccessOpen(data.open))
-      .catch(() => setAccessOpen(true));
-  }, []);
+    const checkAccess = () => {
+      fetch("/api/access")
+        .then((res) => res.json() as Promise<{ open: boolean }>)
+        .then((data) => {
+          setAccessOpen(data.open);
+          if (!data.open) {
+            router.push("/closed");
+          }
+        })
+        .catch(() => setAccessOpen(true));
+    };
+
+    checkAccess();
+    const interval = setInterval(checkAccess, 30000);
+    return () => clearInterval(interval);
+  }, [router]);
 
   return (
     <main className="relative min-h-screen text-white">
@@ -84,7 +97,7 @@ export default function HomePage() {
 
         {/* 再生中の曲 */}
         <section className="bg-zinc-900/60 backdrop-blur-xl rounded-2xl p-6 border border-zinc-800/60">
-          <NowPlaying onColorsChange={setColors} />
+          <NowPlaying onColorsChange={setColors} accessOpen={accessOpen} />
         </section>
 
         {/* 次の曲 */}
