@@ -22,7 +22,7 @@ export default function HomePage() {
         {/* 曲検索 */}
         <section className="flex flex-col gap-3">
           <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">
-            キューに追加
+            Add to Queue
           </h2>
           <SearchBar />
         </section>

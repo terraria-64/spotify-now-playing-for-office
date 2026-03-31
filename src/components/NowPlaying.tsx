@@ -4,6 +4,13 @@ import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import type { NowPlayingResponse } from "@/types/spotify";
 
+// 音量プリセットの定義
+const VOLUME_PRESETS = [
+  { label: "Low", value: 45 },
+  { label: "Med", value: 65 },
+  { label: "High", value: 75 },
+] as const;
+
 // 再生時間をmm:ss形式にフォーマットする
 function formatDuration(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000);
@@ -15,6 +22,22 @@ function formatDuration(ms: number): string {
 export default function NowPlaying() {
   const [data, setData] = useState<NowPlayingResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  // 現在選択中の音量プリセット値
+  const [activeVolume, setActiveVolume] = useState<number | null>(null);
+
+  // 音量を設定する
+  const setVolume = useCallback(async (volume: number) => {
+    try {
+      await fetch("/api/volume", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ volume }),
+      });
+      setActiveVolume(volume);
+    } catch {
+      // ネットワークエラーは無視
+    }
+  }, []);
 
   const fetchNowPlaying = useCallback(async () => {
     try {
@@ -58,7 +81,6 @@ export default function NowPlaying() {
 
   const { track, progress_ms } = data;
   const artwork = track.album.images[0]?.url;
-  const artists = track.artists.map((a) => a.name).join(", ");
   const progressPercent = progress_ms
     ? (progress_ms / track.duration_ms) * 100
     : 0;
@@ -88,7 +110,21 @@ export default function NowPlaying() {
       {/* 曲情報 */}
       <div className="text-center">
         <p className="text-white text-xl font-bold leading-tight">{track.name}</p>
-        <p className="text-zinc-400 text-sm mt-1">{artists}</p>
+        <p className="text-zinc-400 text-sm mt-1">
+          {track.artists.map((artist, i) => (
+            <span key={artist.id}>
+              {i > 0 && ", "}
+              <a
+                href={artist.external_urls.spotify}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-white hover:underline transition-colors"
+              >
+                {artist.name}
+              </a>
+            </span>
+          ))}
+        </p>
         <p className="text-zinc-500 text-xs mt-0.5">{track.album.name}</p>
       </div>
 
@@ -107,6 +143,30 @@ export default function NowPlaying() {
           </div>
         </div>
       )}
+
+      {/* 音量調節ボタン */}
+      <div className="flex flex-col items-center gap-2">
+      <div className="flex items-center gap-1.5 text-zinc-400 text-sm">
+        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z" />
+        </svg>
+      </div>
+      <div className="flex gap-2">
+        {VOLUME_PRESETS.map(({ label, value }) => (
+          <button
+            key={value}
+            onClick={() => setVolume(value)}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+              activeVolume === value
+                ? "bg-green-500 text-black"
+                : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      </div>
     </div>
   );
 }
