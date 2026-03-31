@@ -10,9 +10,6 @@ const geistSans = Geist({
 export const metadata: Metadata = {
   title: "Spotify Now Playing",
   description: "再生中の曲を表示したりキューに曲を追加できるやつ",
-  icons: {
-    icon: "/sw-favi.png",
-  },
 };
 
 export default function RootLayout({
