@@ -1,8 +1,22 @@
+import { getRequestContext } from "@cloudflare/next-on-pages";
+import type { KVNamespace } from "@cloudflare/workers-types";
 import { getAccessToken } from "@/lib/spotify";
 
 export const runtime = "edge";
 
 export async function GET(request: Request) {
+  // アクセスが閉じている場合は検索を拒否する
+  try {
+    const { env } = getRequestContext();
+    const kv = (env as unknown as { ACCESS_STORE: KVNamespace }).ACCESS_STORE;
+    const value = await kv.get("access_open");
+    if (value === "false") {
+      return Response.json({ error: "現在リクエストは受け付けていません" }, { status: 403 });
+    }
+  } catch {
+    // KVが取得できない場合はオープンとして扱う
+  }
+
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q");
 

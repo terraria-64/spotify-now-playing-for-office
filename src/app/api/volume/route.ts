@@ -2,6 +2,32 @@ import { getAccessToken } from "@/lib/spotify";
 
 export const runtime = "edge";
 
+// 現在の再生音量を取得する
+export async function GET() {
+  let accessToken: string;
+  try {
+    accessToken = await getAccessToken();
+  } catch {
+    return Response.json({ error: "トークンの取得に失敗しました" }, { status: 500 });
+  }
+
+  const response = await fetch("https://api.spotify.com/v1/me/player", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (!response.ok) {
+    return Response.json({ error: "Spotify API error" }, { status: response.status });
+  }
+
+  // 再生中でない場合は204が返る
+  if (response.status === 204) {
+    return Response.json({ volume: null });
+  }
+
+  const data = await response.json() as { device?: { volume_percent?: number } };
+  return Response.json({ volume: data.device?.volume_percent ?? null });
+}
+
 export async function PUT(request: Request) {
   const { volume } = await request.json() as { volume: number };
 

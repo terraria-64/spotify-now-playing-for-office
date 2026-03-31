@@ -1,3 +1,5 @@
+import { getRequestContext } from "@cloudflare/next-on-pages";
+import type { KVNamespace } from "@cloudflare/workers-types";
 import { getAccessToken } from "@/lib/spotify";
 
 export const runtime = "edge";
@@ -26,6 +28,18 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  // アクセスが閉じている場合はキュー追加を拒否する
+  try {
+    const { env } = getRequestContext();
+    const kv = (env as unknown as { ACCESS_STORE: KVNamespace }).ACCESS_STORE;
+    const value = await kv.get("access_open");
+    if (value === "false") {
+      return Response.json({ error: "現在リクエストは受け付けていません" }, { status: 403 });
+    }
+  } catch {
+    // KVが取得できない場合はオープンとして扱う
+  }
+
   const { uri } = await request.json() as { uri: string };
 
   if (!uri) {

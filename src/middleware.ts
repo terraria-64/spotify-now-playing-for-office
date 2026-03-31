@@ -3,7 +3,7 @@ import { getRequestContext } from "@cloudflare/next-on-pages";
 import type { KVNamespace } from "@cloudflare/workers-types";
 
 // アクセス制御の対象外パス
-const BYPASS_PATHS = ["/closed", "/admin", "/api/admin"];
+const BYPASS_PATHS = ["/closed", "/admin", "/api/admin", "/api/access", "/"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

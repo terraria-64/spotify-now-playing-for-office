@@ -54,7 +54,7 @@ export default function SearchBar() {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="曲名やアーティスト名で検索..."
+          placeholder="Dig for a track..."
           className="w-full pl-10 pr-4 py-3 bg-zinc-800 text-white placeholder-zinc-500 rounded-xl
             border border-zinc-700 focus:outline-none focus:border-green-500 transition-colors text-sm"
         />
