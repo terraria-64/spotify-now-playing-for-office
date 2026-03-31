@@ -93,7 +93,7 @@ export default function HomePage() {
         {/* 曲検索 */}
         <section className="flex flex-col gap-3">
           <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">
-            CALL YOUR SHOT
+            Got a request?
           </h2>
           {accessOpen === false ? (
             <div className="w-full py-4 px-4 bg-zinc-900/60 backdrop-blur-xl rounded-xl border border-zinc-800/60 text-center text-zinc-500 text-sm">
