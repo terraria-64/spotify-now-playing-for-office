@@ -125,7 +125,16 @@ export default function NowPlaying() {
             </span>
           ))}
         </p>
-        <p className="text-zinc-500 text-xs mt-0.5">{track.album.name}</p>
+        <p className="text-zinc-500 text-xs mt-0.5">
+          <a
+            href={track.album.external_urls.spotify}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-white hover:underline transition-colors"
+          >
+            {track.album.name}
+          </a>
+        </p>
       </div>
 
       {/* プログレスバー */}

@@ -1,5 +1,6 @@
 import NowPlaying from "@/components/NowPlaying";
 import SearchBar from "@/components/SearchBar";
+import NextUp from "@/components/NextUp";
 
 // ログイン不要のメインページ（アクセス制御はMiddlewareで実施）
 export default function HomePage() {
@@ -18,6 +19,9 @@ export default function HomePage() {
         <section className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
           <NowPlaying />
         </section>
+
+        {/* 次の曲 */}
+        <NextUp />
 
         {/* 曲検索 */}
         <section className="flex flex-col gap-3">
