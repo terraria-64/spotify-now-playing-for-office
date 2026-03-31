@@ -1,0 +1,9 @@
+name = "spotify-now-playing"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+pages_build_output_dir = ".vercel/output/static"
+
+[[kv_namespaces]]
+binding = "ACCESS_STORE"
+id = "666aaea4e6554b918b2668a19e8afa2e"
