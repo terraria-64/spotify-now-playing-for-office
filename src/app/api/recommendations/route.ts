@@ -1,4 +1,4 @@
-import { getAccessToken } from "@/lib/spotify";
+import { getAccessToken, spotifyErrorResponse } from "@/lib/spotify";
 import type { SpotifyArtist, SpotifyTrack } from "@/types/spotify";
 
 export const runtime = "edge";
@@ -26,6 +26,7 @@ export async function GET(request: Request) {
     { headers }
   );
   if (!relatedRes.ok) {
+    if (relatedRes.status === 429) return spotifyErrorResponse(relatedRes);
     return Response.json({ tracks: [] });
   }
 

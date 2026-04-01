@@ -1,6 +1,6 @@
 import { getRequestContext } from "@cloudflare/next-on-pages";
 import type { KVNamespace } from "@cloudflare/workers-types";
-import { getAccessToken } from "@/lib/spotify";
+import { getAccessToken, spotifyErrorResponse } from "@/lib/spotify";
 
 export const runtime = "edge";
 
@@ -44,7 +44,7 @@ export async function GET(request: Request) {
   );
 
   if (!response.ok) {
-    return Response.json({ error: "Spotify API error" }, { status: response.status });
+    return spotifyErrorResponse(response);
   }
 
   const data = await response.json() as { tracks: { items: unknown[] } };

@@ -1,4 +1,4 @@
-import { getAccessToken } from "@/lib/spotify";
+import { getAccessToken, spotifyErrorResponse } from "@/lib/spotify";
 
 export const runtime = "edge";
 
@@ -16,7 +16,7 @@ export async function GET() {
   });
 
   if (!response.ok) {
-    return Response.json({ error: "Spotify API error" }, { status: response.status });
+    return spotifyErrorResponse(response);
   }
 
   // 再生中でない場合は204が返る
@@ -56,6 +56,7 @@ export async function PUT(request: Request) {
   }
 
   if (!response.ok) {
+    if (response.status === 429) return spotifyErrorResponse(response);
     const error = await response.json().catch(() => ({})) as { error?: { message?: string } };
     return Response.json(
       { error: error?.error?.message ?? "Spotify API error" },

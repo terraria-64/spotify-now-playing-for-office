@@ -1,4 +1,4 @@
-import { getAccessToken } from "@/lib/spotify";
+import { getAccessToken, spotifyErrorResponse } from "@/lib/spotify";
 
 export const runtime = "edge";
 import type { NowPlayingResponse } from "@/types/spotify";
@@ -25,7 +25,7 @@ export async function GET() {
   }
 
   if (!response.ok) {
-    return Response.json({ error: "Spotify API error" }, { status: response.status });
+    return spotifyErrorResponse(response);
   }
 
   const data = await response.json() as {

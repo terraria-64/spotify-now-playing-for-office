@@ -1,6 +1,6 @@
 import { getRequestContext } from "@cloudflare/next-on-pages";
 import type { KVNamespace } from "@cloudflare/workers-types";
-import { getAccessToken } from "@/lib/spotify";
+import { getAccessToken, spotifyErrorResponse } from "@/lib/spotify";
 
 export const runtime = "edge";
 
@@ -18,6 +18,7 @@ export async function GET() {
   });
 
   if (!response.ok) {
+    if (response.status === 429) return spotifyErrorResponse(response);
     return Response.json({ nextTrack: null });
   }
 
@@ -67,6 +68,7 @@ export async function POST(request: Request) {
   }
 
   if (!response.ok) {
+    if (response.status === 429) return spotifyErrorResponse(response);
     const error = await response.json().catch(() => ({})) as { error?: { message?: string } };
     return Response.json(
       { error: error?.error?.message ?? "Spotify API error" },

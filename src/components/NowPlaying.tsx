@@ -191,8 +191,26 @@ export default function NowPlaying({ onColorsChange, accessOpen }: NowPlayingPro
     }
     fetchNowPlaying();
     // 12秒ごとにポーリング
-    const interval = setInterval(fetchNowPlaying, 12000);
-    return () => clearInterval(interval);
+    let interval: ReturnType<typeof setInterval> | null = setInterval(fetchNowPlaying, 12000);
+
+    // タブの表示状態に応じてポーリングを停止・再開する
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        if (interval) {
+          clearInterval(interval);
+          interval = null;
+        }
+      } else {
+        fetchNowPlaying();
+        interval = setInterval(fetchNowPlaying, 12000);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      if (interval) clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [fetchNowPlaying, accessOpen]);
 
   // アートワーク変化時に背景色を抽出して親に通知

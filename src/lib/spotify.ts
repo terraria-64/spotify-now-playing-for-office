@@ -1,3 +1,15 @@
+// Spotify APIエラーレスポンスを生成する（429時はretry-afterを含める）
+export function spotifyErrorResponse(response: Response): Response {
+  if (response.status === 429) {
+    const retryAfter = response.headers.get("retry-after");
+    return Response.json(
+      { error: "レートリミット超過", retryAfter },
+      { status: 429 }
+    );
+  }
+  return Response.json({ error: "Spotify API error" }, { status: response.status });
+}
+
 // リフレッシュトークンを使ってアクセストークンを取得する（Edge Runtime対応）
 export async function getAccessToken(): Promise<string> {
   const refreshToken = process.env.SPOTIFY_REFRESH_TOKEN;

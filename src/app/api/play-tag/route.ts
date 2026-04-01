@@ -1,4 +1,4 @@
-import { getAccessToken } from "@/lib/spotify";
+import { getAccessToken, spotifyErrorResponse } from "@/lib/spotify";
 
 export const runtime = "edge";
 
@@ -108,6 +108,7 @@ export async function POST(request: Request) {
   });
 
   if (playRes.status !== 204 && !playRes.ok) {
+    if (playRes.status === 429) return spotifyErrorResponse(playRes);
     const err = await playRes.json().catch(() => ({})) as { error?: { message?: string } };
     return Response.json(
       { error: err?.error?.message ?? "Spotify 再生エラー" },
